@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎓 UniOrder - Campus Smart Network</title>
+    <title>🎓 UniOrder - Realtime Campus Food Network</title>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --dark: #333; --danger: #dc3545; }
+        :root { --primary: #007bff; --success: #28a745; --dark: #333; --danger: #dc3545; --warning: #ffc107; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f9; color: var(--dark); }
         .header { background: #fff; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .lang-select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
@@ -18,15 +18,20 @@
         .canteen-card { border: 1px solid #e1e8ed; padding: 15px; margin: 12px 0; border-radius: 10px; background: #fff; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .canteen-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.08); }
         .food-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; color: white; display: inline-block; }
         .status-open { background: var(--success); }
         .status-closed { background: var(--danger); }
+        .status-pending { background: var(--warning); color: #000; }
+        .status-accepted { background: var(--primary); }
+        .status-paid { background: #6f42c1; }
+        .status-ready { background: var(--success); }
         input, select, textarea { width: 100%; padding: 11px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
         button.btn { width: 100%; background: var(--success); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .admin-box { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef; }
         .receipt-preview { max-width: 100%; max-height: 150px; margin-top: 5px; border-radius: 4px; display: block; cursor: pointer; border: 1px solid #ddd; }
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; justify-content:center; align-items:center; }
         .modal img { max-width: 90%; max-height: 80%; border-radius: 8px; }
+        .btn-action { padding: 6px 12px; font-size: 12px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; color: white; margin: 2px; }
     </style>
 </head>
 <body>
@@ -58,51 +63,49 @@
         <div id="detMenuContainer"></div>
 
         <div id="orderFormSection" style="margin-top:25px; border-top:2px solid #eee; padding-top:15px;">
-            <h3>🛒 <span class="ln" data-si="ඇණවුම් පෝරමය" data-en="Place Your Order" data-ta="ஆர்டர் படிவம்">ඇණවුම් පෝරමය</span></h3>
+            <h3>🛒 <span class="ln" data-si="1. ඇණවුම ලබා දෙන්න" data-en="1. Request Order" data-ta="ஆர்டர் படிவம்">1. ඇණවුම ලබා දෙන්න</span></h3>
             <input type="text" id="stuId" placeholder="Student ID (ශිෂ්‍ය අංකය)">
             <input type="tel" id="stuPhone" placeholder="Contact Number (දුරකථන අංකය)">
             <select id="foodSelect" onchange="updateTotal()"></select>
+            <select id="stuTime"></select>
 
             <div style="background:#f0f8ff; padding:12px; border-radius:6px; margin:10px 0; text-align:right;">
                 <strong><span class="ln" data-si="මුළු මුදල" data-en="Total Price" data-ta="மொத்த தொகை">මුළු මුදල</span>: <span id="totalPrice">රු. 0</span></strong><br>
                 <span style="font-size:11px; color:#666;">(Service Charge Rs.20 Included)</span>
             </div>
-
-            <div id="paymentInstructions" style="background:#fff3cd; padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px;"></div>
-            <p style="margin:5px 0; font-size:13px; font-weight:bold;"><span class="ln" data-si="ගෙවීම් රිසිට්පත (Slip) උඩුගත කරන්න:" data-en="Upload Payment Receipt (Slip):" data-ta="ரசீதை பதிவேற்றவும்:">ගෙවීම් රිසිට්පත (Slip) උඩුගත කරන්න:</span></p>
-            <input type="file" id="receiptFile" accept="image/*">
-            <button class="btn" onclick="submitOrder()"><span class="ln" data-si="ඇණවුම තහවුරු කරන්න" data-en="Confirm & Pay" data-ta="ஆர்டரை உறுதிசெய்">ඇණවුම තහවුරු කරන්න</span></button>
+            <button class="btn" onclick="submitOrderRequest()"><span class="ln" data-si="කෑම තිබේදැයි විමසන්න (Request)" data-en="Check Availability (Request)" data-ta="ஆர்டரை உறுதிசெய்">කෑම තිබේදැයි විමසන්න (Request)</span></button>
         </div>
 
-        <h3 style="margin-top:35px;">📦 <span class="ln" data-si="මගේ ඇණවුම්" data-en="My Private Orders" data-ta="எனது ஆர்டர்கள்">මගේ ඇණවුම්</span></h3>
-        <input type="text" id="checkStuId" placeholder="Enter Student ID to check" oninput="loadPrivateOrders()">
+        <h3 style="margin-top:35px;">📦 <span class="ln" data-si="මගේ සජීවී ඇණවුම් සහ ගෙවීම්" data-en="My Live Orders & Payments" data-ta="எனது ஆர்டர்கள்">මගේ සජීවී ඇණවුම් සහ ගෙවීම්</span></h3>
+        <input type="text" id="checkStuId" placeholder="Enter Student ID to check & upload slip" oninput="loadPrivateOrders()">
         <div id="privateOrdersContainer"></div>
     </div>
     <div id="pageAdmin" class="page">
-        <!-- CANTEEN SELF-REGISTRATION SYSTEM -->
         <div class="admin-box" style="background:#fff3cd; border-color:#ffeeba;">
-            <h4>📝 <span class="ln" data-si="නව කැන්ටිමක් ඇතුළත් කරන්න (Register)" data-en="Register New Canteen" data-ta="புதிய உணவகப் பதிவு">නව කැන්ටිමක් ඇතුළත් කරන්න (Register)</span></h4>
+            <h4>📝 <span class="ln" data-si="නව කැන්ටිමක් ලියාපදිංචි කරන්න" data-en="Register Canteen" data-ta="பதிவு">නව කැන්ටිමක් ලියාපදිංචි කරන්න</span></h4>
             <input type="text" id="regCanteenName" placeholder="කැන්ටිමේ නම (Canteen Name)">
-            <input type="password" id="regCanteenPass" placeholder="කැන්ටිමට රහස් පදයක් (Password)">
-            <input type="text" id="regCanteenHours" placeholder="විවෘත වෙලාවල් (Hours)">
+            <input type="password" id="regCanteenPass" placeholder="කැන්ටිම් රහස් පදය (Password)">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <input type="time" id="regOpenTime" value="07:00" title="Open Time">
+                <input type="time" id="regCloseTime" value="18:00" title="Close Time">
+            </div>
             <textarea id="regCanteenBank" placeholder="බැංකු ගිණුම් විස්තර"></textarea>
             <button class="btn" style="background:var(--primary);" onclick="registerNewCanteen()">Register Canteen</button>
         </div>
 
         <hr style="margin:20px 0;">
 
-        <h2>🏪 <span class="ln" data-si="කැන්ටිම් පාලක පැනලය" data-en="Canteen Portal Login" data-ta="உணவக மேலாண்மை">කැන්ටිම් පාලක පැනලය</span></h2>
+        <h2>🏪 <span class="ln" data-si="කැන්ටිම් පාලක පැනලය" data-en="Canteen Management" data-ta="மேலாண்மை">කැන්ටිම් පාලක පැනලය</span></h2>
         <select id="adminCanteenSelect" onchange="renderAdminDashboard()"></select>
-        <input type="password" id="canteenPass" placeholder="Password (කැන්ටිමේ රහස් පදය)" oninput="renderAdminDashboard()">
+        <input type="password" id="canteenPass" placeholder="Password (රහස් පදය)" oninput="renderAdminDashboard()">
 
         <div id="adminContent" style="display:none; margin-top:20px;">
             <div class="admin-box">
-                <h4>⚙️ <span class="ln" data-si="කැන්ටිම් තත්ත්වය වෙනස් කරන්න" data-en="Update Shop Info" data-ta="உணவக நிலை">කැන්ටිම් තත්ත්වය වෙනස් කරන්න</span></h4>
+                <h4>⚙️ <span class="ln" data-si="කැන්ටිම් තත්ත්වය" data-en="Shop Status" data-ta="உணவக நிலை">කැන්ටිම් තත්ත්වය</span></h4>
                 <select id="updateStatus" onchange="updateCanteenMeta()">
-                    <option value="Open">Open (විවෘතයි)</option>
-                    <option value="Closed">Closed (වසා ඇත)</option>
+                    <option value="Open">Open</option>
+                    <option value="Closed">Closed</option>
                 </select>
-                <input type="text" id="updateSchedule" placeholder="දින සටහන / නිවේදන" oninput="updateCanteenMeta()">
                 <textarea id="updateBank" placeholder="බැංකු ගිණුම් විස්තර" oninput="updateCanteenMeta()"></textarea>
             </div>
 
@@ -113,10 +116,10 @@
                 <button class="btn" style="background:var(--success);" onclick="addMenuItem()">Save Item</button>
             </div>
 
-            <h3>📊 <span class="ln" data-si="ආදායම් වාර්තාව" data-en="Earnings Dashboard" data-ta="வருவாய்">ආදායම් වාර්තාව</span></h3>
+            <h3>📊 <span class="ln" data-si="ආදායම් වාර්තාව" data-en="Earnings" data-ta="வருவாய்">ආදායම් වාර්තාව</span></h3>
             <div style="background:#e2e3e5; padding:12px; border-radius:6px; text-align:center; font-weight:bold; margin-bottom:15px;" id="adminCanteenEarn"></div>
 
-            <h3>📦 <span class="ln" data-si="ලැබුණු ඇණවුම් සහ රිසිට්පත්" data-en="Received Orders & Receipts" data-ta="பெறப்பட்ட ஆர்டர்கள்">ලැබුණු ඇණවුම් සහ රිසිට්පත්</span></h3>
+            <h3>📦 <span class="ln" data-si="ලැබුණු ඇණවුම් කළමනාකරණය" data-en="Manage Orders" data-ta="ஆர்டர்கள்">ලැබුණු ඇණවුම් කළමනාකරණය</span></h3>
             <div id="ordersContainer"></div>
         </div>
         <div id="adminError" style="color:var(--danger); font-weight:bold; text-align:center; margin-top:10px;">Enter correct password for the selected canteen.</div>
@@ -127,14 +130,51 @@
     <img id="modalImg" src="">
 </div>
 <script>
-    let googleSheetUrl = "https://google.com";
+    let googleSheetUrl = "https://script.google.com/macros/s/AKfycbyfxd8_Fc9nLE8PWSAY3d4nJ-X38L8t7L_PZtsqzUOZysjgo55ngQeONh8cHiwqqM1WFg/exec";
 
-    // සජීවීව ලියාපදිංචි වන නිසා පරණ default ලිස්ට් එක සම්පූර්ණයෙන්ම ඉවත් කර ඇත
     let canteens = JSON.parse(localStorage.getItem('uniCanteens')) || {};
     let menu = JSON.parse(localStorage.getItem('uniMenu')) || [];
     let orders = JSON.parse(localStorage.getItem('uniOrders')) || [];
     let currentLang = "si";
     let activeCanteen = "";
+    let lastOrderCount = orders.length;
+
+    function playNotificationSound(type) {
+        try {
+            let ctx = new (window.AudioContext || window.webkitAudioContext)();
+            let osc = ctx.createOscillator();
+            let gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            if(type === 'canteen') {
+                osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                osc.start(); osc.stop(ctx.currentTime + 0.15);
+                setTimeout(() => {
+                    let ctx2 = new (window.AudioContext || window.webkitAudioContext)();
+                    let osc2 = ctx2.createOscillator(); let gain2 = ctx2.createGain();
+                    osc2.connect(gain2); gain2.connect(ctx2.destination);
+                    osc2.frequency.setValueAtTime(880, ctx2.currentTime); gain2.gain.setValueAtTime(0.3, ctx2.currentTime);
+                    osc2.start(); osc2.stop(ctx2.currentTime + 0.15);
+                }, 200);
+            } else {
+                osc.type = "triangle"; osc.frequency.setValueAtTime(587, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1174, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                osc.start(); osc.stop(ctx.currentTime + 0.3);
+            }
+        } catch(e) { console.log("Audio play blocked by browser policy."); }
+    }
+
+    setInterval(() => {
+        let currentOrders = JSON.parse(localStorage.getItem('uniOrders')) || [];
+        if(currentOrders.length > lastOrderCount) {
+            playNotificationSound('canteen');
+            lastOrderCount = currentOrders.length;
+            if(document.getElementById('pageAdmin').classList.contains('active')) renderAdminDashboard();
+        }
+    }, 3000);
 
     function changeLanguage() {
         currentLang = document.getElementById('langSelector').value;
@@ -158,84 +198,73 @@
         }
     }
 
-    // NEW CANTEEN REGISTRATION LOGIC
     function registerNewCanteen() {
         let name = document.getElementById('regCanteenName').value.trim();
         let pass = document.getElementById('regCanteenPass').value;
-        let hours = document.getElementById('regCanteenHours').value.trim();
+        let open = document.getElementById('regOpenTime').value;
+        let close = document.getElementById('regCloseTime').value;
         let bank = document.getElementById('regCanteenBank').value.trim();
 
-        if(!name || !pass || !hours || !bank) return alert("Please fill all fields to register your canteen!");
-        if(canteens[name]) return alert("This canteen name is already registered!");
+        if(!name || !pass || !open || !close || !bank) return alert("Please fill all fields!");
+        if(canteens[name]) return alert("Canteen name already exists!");
 
-        canteens[name] = { status: "Open", schedule: hours, bank: bank, password: pass };
+        canteens[name] = { status: "Open", openTime: open, closeTime: close, bank: bank, password: pass };
         localStorage.setItem('uniCanteens', JSON.stringify(canteens));
-
-        alert("Your canteen successfully registered! Now select your canteen below, enter password and add menu.");
-        document.getElementById('regCanteenName').value = "";
-        document.getElementById('regCanteenPass').value = "";
-        document.getElementById('regCanteenHours').value = "";
-        document.getElementById('regCanteenBank').value = "";
-
-        updateAdminDropdown();
-        renderCanteenList();
+        alert("Registration complete!");
+        location.reload();
     }
 
     function updateAdminDropdown() {
         let selectHTML = "";
-        for(let name in canteens) {
-            selectHTML += `<option value="${name}">${name}</option>`;
-        }
-        document.getElementById('adminCanteenSelect').innerHTML = selectHTML || "<option>No canteens registered yet</option>";
+        for(let name in canteens) { selectHTML += `<option value="${name}">${name}</option>`; }
+        document.getElementById('adminCanteenSelect').innerHTML = selectHTML || "<option>No canteens</option>";
     }
 
     function renderCanteenList() {
         let html = "";
-        let count = 0;
         for (let name in canteens) {
-            count++;
             let info = canteens[name];
             let cls = info.status === "Open" ? "status-open" : "status-closed";
             html += `<div class="canteen-card" onclick="openCanteen('${name}')">
                 <div class="flex-box"><strong>🏪 ${name}</strong><span class="status-badge ${cls}">${info.status}</span></div>
-                <div style="font-size:13px; color:#666; margin-top:5px;">🕒 Hours: ${info.schedule}</div>
+                <div style="font-size:13px; color:#666; margin-top:5px;">🕒 Open: ${info.openTime} - Close: ${info.closeTime}</div>
             </div>`;
         }
-        document.getElementById('canteenListContainer').innerHTML = html || "<p style='color:grey;text-align:center;'>No canteens registered yet. Go to Canteen Admin tab to register!</p>";
+        document.getElementById('canteenListContainer').innerHTML = html || "<p style='color:grey;text-align:center;'>No canteens registered yet.</p>";
     }
 
+    function generateTimeSlots(open, close) {
+        let slots = [];
+        let [oH, oM] = open.split(':').map(Number);
+        let [cH, cM] = close.split(':').map(Number);
+
+        let current = new Date(); current.setHours(oH, oM, 0, 0);
+        let end = new Date(); end.setHours(cH, cM, 0, 0);
+
+        while(current <= end) {
+            let timeString = current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            slots.push(`<option value="${timeString}">${timeString}</option>`);
+            current.setMinutes(current.getMinutes() + 30);
+        }
+        return slots.join('');
+    }
     function openCanteen(name) {
         activeCanteen = name;
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('pageCanteenDetail').classList.add('active');
         document.getElementById('detCanteenName').innerText = "🏪 " + name;
         let info = canteens[name];
-        document.getElementById('detCanteenMeta').innerHTML = `🕒 <strong>Time:</strong> ${info.schedule} | <strong>Status:</strong> ${info.status}`;
+        document.getElementById('detCanteenMeta').innerHTML = `🕒 <strong>Hours:</strong> ${info.openTime} - ${info.closeTime}`;
         document.getElementById('paymentInstructions').innerHTML = `<strong>💰 Bank Info:</strong> Deposit to ${info.bank}`;
 
-        let menuHTML = "";
-        let selectHTML = "<option value=''>-- Select Food --</option>";
-        let filteredMenu = menu.filter(m => m.canteen === name);
-        filteredMenu.forEach(item => {
+        let menuHTML = ""; let selectHTML = "<option value=''>-- Select Food --</option>";
+        menu.filter(m => m.canteen === name).forEach(item => {
             menuHTML += `<div class="food-item"><span>🍚 ${item.name}</span><span class="price">Rs. ${item.price + 20}</span></div>`;
             selectHTML += `<option value="${item.name}" data-price="${item.price}">${item.name} (Rs. ${item.price + 20})</option>`;
         });
-        document.getElementById('detMenuContainer').innerHTML = menuHTML || "<p>No meals updated for today.</p>";
-
-        if(!document.getElementById('stuTime')) {
-            let timeSelectHTML = `<select id="stuTime">
-                <option value="">-- කෑම ගන්න එන වේලාව (Pickup Time) --</option>
-                <option value="11:30 AM">11:30 AM</option>
-                <option value="12:00 PM">12:00 PM</option>
-                <option value="12:30 PM">12:30 PM</option>
-                <option value="01:00 PM">01:00 PM</option>
-                <option value="01:30 PM">01:30 PM</option>
-                <option value="02:00 PM">02:00 PM</option>
-            </select>`;
-            document.getElementById('foodSelect').insertAdjacentHTML('afterend', timeSelectHTML);
-        }
-
+        document.getElementById('detMenuContainer').innerHTML = menuHTML || "<p>No meals updated.</p>";
         document.getElementById('foodSelect').innerHTML = selectHTML;
+        document.getElementById('stuTime').innerHTML = `<option value="">-- Choose Pickup Time --</option>` + generateTimeSlots(info.openTime, info.closeTime);
         document.getElementById('orderFormSection').style.display = info.status === "Open" ? "block" : "none";
     }
 
@@ -245,83 +274,113 @@
         let basePrice = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-price'));
         document.getElementById('totalPrice').innerText = "Rs. " + (basePrice + 20);
     }
-    function submitOrder() {
+
+    function submitOrderRequest() {
         let id = document.getElementById('stuId').value.trim();
         let phone = document.getElementById('stuPhone').value.trim();
         let food = document.getElementById('foodSelect').value;
         let time = document.getElementById('stuTime').value;
-        let fileInput = document.getElementById('receiptFile');
 
-        if(!id || !phone || !food || !time || fileInput.files.length === 0) {
-            return alert("Please fill Student ID, Phone, Pickup Time, and upload Receipt!");
-        }
+        if(!id || !phone || !food || !time) return alert("Please fill all data fields!");
         let sel = document.getElementById('foodSelect');
         let basePrice = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-price'));
 
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            let orderData = { studentId: id, phone: phone, canteen: activeCanteen, item: food, canteenShare: basePrice, devShare: 20, total: basePrice + 20, time: time, receipt: e.target.result };
-            orders.push(orderData);
-            localStorage.setItem('uniOrders', JSON.stringify(orders));
+        let newOrder = {
+            orderId: Date.now(), studentId: id, phone: phone, canteen: activeCanteen, item: food,
+            canteenShare: basePrice, devShare: 20, total: basePrice + 20, time: time, status: "Pending", receipt: ""
+        };
 
-            if(googleSheetUrl) {
-                fetch(googleSheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderData) })
-                .then(() => console.log("Synced with Google Sheets!"))
-                .catch(err => console.error("Sync error:", err));
-            }
+        orders.push(newOrder);
+        localStorage.setItem('uniOrders', JSON.stringify(orders));
+        syncCloud(newOrder);
 
-            alert("Order placed successfully!");
-            document.getElementById('stuId').value = ""; document.getElementById('stuPhone').value = ""; document.getElementById('receiptFile').value = "";
-            openCanteen(activeCanteen);
-        }
-        reader.readAsDataURL(fileInput.files);
+        alert("Request sent to Canteen! Please check live status section below to pay once accepted.");
+        document.getElementById('stuId').value = ""; document.getElementById('stuPhone').value = "";
+        loadPrivateOrders();
     }
 
     function loadPrivateOrders() {
-        let id = document.getElementById('checkStuId').value.trim().toLowerCase(); let html = "";
+        let id = document.getElementById('checkStuId').value.trim().toLowerCase();
+        let html = "";
         orders.filter(o => o.studentId.toLowerCase() === id).forEach(o => {
-            html += `<div class="canteen-card"><strong>${o.canteen}</strong>: ${o.item} - Rs.${o.total} <br><small>🕒 Pickup Time: ${o.time}</small> <span style="color:green;">✓ Verified</span></div>`;
+            let actionHTML = "";
+            if(o.status === 'Accepted') {
+                actionHTML = `<div style="margin-top:10px;">
+                    <small style="color:blue;font-weight:bold;">Canteen Accepted! Upload payment receipt slip to start preparation:</small>
+                    <input type="file" id="slip_${o.orderId}" accept="image/*" onchange="uploadPaymentSlip(${o.orderId})">
+                </div>`;
+            }
+            html += `<div class="canteen-card">
+                <strong>${o.canteen}</strong>: ${o.item} - Rs.${o.total} <br>
+                <small>🕒 Pickup: ${o.time} | <strong>Status:</strong> <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></small>
+                ${actionHTML}
+            </div>`;
         });
-        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No orders found.</p>";
+        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No live history queued.</p>";
+    }
+
+    function uploadPaymentSlip(orderId) {
+        let fileInput = document.getElementById('slip_' + orderId);
+        if(fileInput.files.length === 0) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            let o = orders.find(ord => ord.orderId === orderId);
+            o.status = "Paid"; o.receipt = e.target.result;
+            localStorage.setItem('uniOrders', JSON.stringify(orders));
+            syncCloud(o);
+            alert("Receipt submitted successfully!");
+            loadPrivateOrders();
+        }
+        reader.readAsDataURL(fileInput.files);
     }
 
     function renderAdminDashboard() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
         let pass = document.getElementById('canteenPass').value;
-
         if(!selectedCanteen || !canteens[selectedCanteen]) return;
-
-        if(pass !== canteens[selectedCanteen].password) {
-            document.getElementById('adminContent').style.display = "none";
-            document.getElementById('adminError').style.display = "block";
-            return;
-        }
-        document.getElementById('adminContent').style.display = "block";
-        document.getElementById('adminError').style.display = "none";
+        if(pass !== canteens[selectedCanteen].password) { document.getElementById('adminContent').style.display = "none"; document.getElementById('adminError').style.display = "block"; return; }
+        document.getElementById('adminContent').style.display = "block"; document.getElementById('adminError').style.display = "none";
 
         let info = canteens[selectedCanteen];
-        document.getElementById('updateStatus').value = info.status;
-        document.getElementById('updateSchedule').value = info.schedule;
-        document.getElementById('updateBank').value = info.bank;
+        document.getElementById('updateStatus').value = info.status; document.getElementById('updateBank').value = info.bank;
 
         let canteenEarn = 0; let orderHTML = "";
         orders.filter(o => o.canteen === selectedCanteen).forEach(o => {
-            canteenEarn += o.canteenShare;
+            if(o.status === 'Paid' || o.status === 'Ready') canteenEarn += o.canteenShare;
+
+            let actionButtons = "";
+            if(o.status === 'Pending') {
+                actionButtons = `<button class="btn-action" style="background:var(--primary);" onclick="updateStatus(${o.orderId}, 'Accepted')">Accept</button>
+                                 <button class="btn-action" style="background:var(--danger);" onclick="updateStatus(${o.orderId}, 'Declined')">Decline</button>`;
+            } else if(o.status === 'Paid') {
+                actionButtons = `<button class="btn-action" style="background:var(--success);" onclick="updateStatus(${o.orderId}, 'Ready')">Mark Ready</button>`;
+            }
+
+            let imgHTML = o.receipt ? `<br><img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')">` : "<br><small style='color:red;'>Waiting for payment slip...</small>";
+
             orderHTML += `<div class="admin-box">
-                <div><strong>ID:</strong> ${o.studentId} | 📞 <strong>Phone:</strong> ${o.phone}</div>
-                <div><strong>Meal:</strong> ${o.item} | 🕒 <strong>Pickup:</strong> <span style="color:var(--primary); font-weight:bold;">${o.time}</span></div>
-                <div><strong>Payout:</strong> Rs. ${o.canteenShare}</div>
-                <img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')">
+                <div><strong>ID:</strong> ${o.studentId} | 📞: ${o.phone}</div>
+                <div><strong>Meal:</strong> ${o.item} | 🕒 Pickup: <strong>${o.time}</strong></div>
+                <div>Status: <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></div>
+                ${imgHTML} <div style="margin-top:8px;">${actionButtons}</div>
             </div>`;
         });
-        document.getElementById('adminCanteenEarn').innerText = `Your Total Income: Rs. ${canteenEarn}`;
-        document.getElementById('ordersContainer').innerHTML = orderHTML || "<p>No orders queued.</p>";
+        document.getElementById('adminCanteenEarn').innerText = `Total Earned: Rs. ${canteenEarn}`;
+        document.getElementById('ordersContainer').innerHTML = orderHTML || "<p>No entries logged.</p>";
+    }
+
+    function updateStatus(orderId, newStatus) {
+        let o = orders.find(ord => ord.orderId === orderId);
+        o.status = newStatus;
+        localStorage.setItem('uniOrders', JSON.stringify(orders));
+        syncCloud(o);
+        playNotificationSound('student');
+        renderAdminDashboard();
     }
 
     function updateCanteenMeta() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
         canteens[selectedCanteen].status = document.getElementById('updateStatus').value;
-        canteens[selectedCanteen].schedule = document.getElementById('updateSchedule').value;
         canteens[selectedCanteen].bank = document.getElementById('updateBank').value;
         localStorage.setItem('uniCanteens', JSON.stringify(canteens));
     }
@@ -330,12 +389,18 @@
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
         let name = document.getElementById('newFoodName').value.trim();
         let price = parseFloat(document.getElementById('newFoodPrice').value);
-        if(!name || !price) return alert("Enter valid credentials!");
+        if(!name || !price) return alert("Fill data!");
         menu.push({ canteen: selectedCanteen, name: name, price: price });
         localStorage.setItem('uniMenu', JSON.stringify(menu));
-        alert("Item saved!");
+        alert("Saved!");
         document.getElementById('newFoodName').value = ""; document.getElementById('newFoodPrice').value = "";
         renderAdminDashboard();
+    }
+
+    function syncCloud(orderData) {
+        if(googleSheetUrl) {
+            fetch(googleSheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderData) });
+        }
     }
 
     function viewBigImage(src) { document.getElementById('modalImg').src = src; document.getElementById('imageModal').style.display = "flex"; }
@@ -343,3 +408,5 @@
 
     window.onload = function() { renderCanteenList(); changeLanguage(); }
 </script>
+</body>
+</html>
