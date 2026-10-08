@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎓 UniOrder - Smart Campus Canteen Network</title>
+    <title>🎓 UniOrder - Campus Smart Network</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #333; --danger: #dc3545; }
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f9; color: var(--dark); }
@@ -79,17 +79,25 @@
         <div id="privateOrdersContainer"></div>
     </div>
     <div id="pageAdmin" class="page">
-        <h2>🏪 <span class="ln" data-si="කැන්ටිම් කළමනාකරණය" data-en="Canteen Management" data-ta="உணவக மேலாண்மை">කැන්ටිම් කළමනාකරණය</span></h2>
-        <select id="adminCanteenSelect" onchange="renderAdminDashboard()">
-            <option value="Main Canteen">Main Canteen (ප්‍රධාන කැන්ටිම)</option>
-            <option value="Science Canteen">Science Faculty Canteen</option>
-            <option value="Management Canteen">Management Canteen</option>
-        </select>
-        <input type="password" id="canteenPass" placeholder="Password (රහස් පදය: 1234)" oninput="renderAdminDashboard()">
+        <!-- CANTEEN SELF-REGISTRATION SYSTEM -->
+        <div class="admin-box" style="background:#fff3cd; border-color:#ffeeba;">
+            <h4>📝 <span class="ln" data-si="නව කැන්ටිමක් ඇතුළත් කරන්න (Register)" data-en="Register New Canteen" data-ta="புதிய உணவகப் பதிவு">නව කැන්ටිමක් ඇතුළත් කරන්න (Register)</span></h4>
+            <input type="text" id="regCanteenName" placeholder="කැන්ටිමේ නම (Canteen Name)">
+            <input type="password" id="regCanteenPass" placeholder="කැන්ටිමට රහස් පදයක් (Password)">
+            <input type="text" id="regCanteenHours" placeholder="විවෘත වෙලාවල් (Hours)">
+            <textarea id="regCanteenBank" placeholder="බැංකු ගිණුම් විස්තර"></textarea>
+            <button class="btn" style="background:var(--primary);" onclick="registerNewCanteen()">Register Canteen</button>
+        </div>
+
+        <hr style="margin:20px 0;">
+
+        <h2>🏪 <span class="ln" data-si="කැන්ටිම් පාලක පැනලය" data-en="Canteen Portal Login" data-ta="உணவக மேலாண்மை">කැන්ටිම් පාලක පැනලය</span></h2>
+        <select id="adminCanteenSelect" onchange="renderAdminDashboard()"></select>
+        <input type="password" id="canteenPass" placeholder="Password (කැන්ටිමේ රහස් පදය)" oninput="renderAdminDashboard()">
 
         <div id="adminContent" style="display:none; margin-top:20px;">
             <div class="admin-box">
-                <h4>⚙️ <span class="ln" data-si="කැන්ටිම් තත්ත්වය" data-en="Canteen Status & Info" data-ta="உணவக நிலை">කැන්ටිම් තත්ත්වය</span></h4>
+                <h4>⚙️ <span class="ln" data-si="කැන්ටිම් තත්ත්වය වෙනස් කරන්න" data-en="Update Shop Info" data-ta="உணவக நிலை">කැන්ටිම් තත්ත්වය වෙනස් කරන්න</span></h4>
                 <select id="updateStatus" onchange="updateCanteenMeta()">
                     <option value="Open">Open (විවෘතයි)</option>
                     <option value="Closed">Closed (වසා ඇත)</option>
@@ -102,7 +110,7 @@
                 <h4>➕ <span class="ln" data-si="කෑම වර්ග අප්ඩේට් කරන්න" data-en="Add Menu Item" data-ta="உணவை சேர்க்கவும்">කෑම වර්ග අප්ඩේට් කරන්න</span></h4>
                 <input type="text" id="newFoodName" placeholder="කෑමේ නම">
                 <input type="number" id="newFoodPrice" placeholder="මුදලාලිගේ මිල (රු.)">
-                <button class="btn" style="background:var(--primary);" onclick="addMenuItem()">Save Item</button>
+                <button class="btn" style="background:var(--success);" onclick="addMenuItem()">Save Item</button>
             </div>
 
             <h3>📊 <span class="ln" data-si="ආදායම් වාර්තාව" data-en="Earnings Dashboard" data-ta="வருவாய்">ආදායම් වාර්තාව</span></h3>
@@ -111,7 +119,7 @@
             <h3>📦 <span class="ln" data-si="ලැබුණු ඇණවුම් සහ රිසිට්පත්" data-en="Received Orders & Receipts" data-ta="பெறப்பட்ட ஆர்டர்கள்">ලැබුණු ඇණවුම් සහ රිසිට්පත්</span></h3>
             <div id="ordersContainer"></div>
         </div>
-        <div id="adminError" style="color:var(--danger); font-weight:bold; text-align:center; margin-top:10px;">Access Restricted. Enter correct password.</div>
+        <div id="adminError" style="color:var(--danger); font-weight:bold; text-align:center; margin-top:10px;">Enter correct password for the selected canteen.</div>
     </div>
 </div>
 
@@ -121,20 +129,9 @@
 <script>
     let googleSheetUrl = "https://google.com";
 
-    let defaultCanteens = {
-        "Main Canteen": { status: "Open", schedule: "7:00 AM - 6:00 PM", bank: "BOC - 0123456789 (Main Canteen)" },
-        "Science Canteen": { status: "Open", schedule: "7:30 AM - 4:30 PM", bank: "People's Bank - 9876543210 (Science)" },
-        "Management Canteen": { status: "Closed", schedule: "8:00 AM - 3:00 PM", bank: "Sampath Bank - 5544332211 (Mgmt)" }
-    };
-    let defaultMenu = [
-        { canteen: "Main Canteen", name: "Chicken Rice", price: 330 },
-        { canteen: "Main Canteen", name: "Egg Noodles", price: 230 },
-        { canteen: "Science Canteen", name: "Fish Fried Rice", price: 350 },
-        { canteen: "Management Canteen", name: "Veggie Rice", price: 200 }
-    ];
-
-    let canteens = JSON.parse(localStorage.getItem('uniCanteens')) || defaultCanteens;
-    let menu = JSON.parse(localStorage.getItem('uniMenu')) || defaultMenu;
+    // සජීවීව ලියාපදිංචි වන නිසා පරණ default ලිස්ට් එක සම්පූර්ණයෙන්ම ඉවත් කර ඇත
+    let canteens = JSON.parse(localStorage.getItem('uniCanteens')) || {};
+    let menu = JSON.parse(localStorage.getItem('uniMenu')) || [];
     let orders = JSON.parse(localStorage.getItem('uniOrders')) || [];
     let currentLang = "si";
     let activeCanteen = "";
@@ -156,13 +153,47 @@
         } else if(tab === 'admin') {
             document.getElementById('pageAdmin').classList.add('active');
             document.getElementById('tabAdmin').classList.add('active');
+            updateAdminDropdown();
             renderAdminDashboard();
         }
     }
 
+    // NEW CANTEEN REGISTRATION LOGIC
+    function registerNewCanteen() {
+        let name = document.getElementById('regCanteenName').value.trim();
+        let pass = document.getElementById('regCanteenPass').value;
+        let hours = document.getElementById('regCanteenHours').value.trim();
+        let bank = document.getElementById('regCanteenBank').value.trim();
+
+        if(!name || !pass || !hours || !bank) return alert("Please fill all fields to register your canteen!");
+        if(canteens[name]) return alert("This canteen name is already registered!");
+
+        canteens[name] = { status: "Open", schedule: hours, bank: bank, password: pass };
+        localStorage.setItem('uniCanteens', JSON.stringify(canteens));
+
+        alert("Your canteen successfully registered! Now select your canteen below, enter password and add menu.");
+        document.getElementById('regCanteenName').value = "";
+        document.getElementById('regCanteenPass').value = "";
+        document.getElementById('regCanteenHours').value = "";
+        document.getElementById('regCanteenBank').value = "";
+
+        updateAdminDropdown();
+        renderCanteenList();
+    }
+
+    function updateAdminDropdown() {
+        let selectHTML = "";
+        for(let name in canteens) {
+            selectHTML += `<option value="${name}">${name}</option>`;
+        }
+        document.getElementById('adminCanteenSelect').innerHTML = selectHTML || "<option>No canteens registered yet</option>";
+    }
+
     function renderCanteenList() {
         let html = "";
+        let count = 0;
         for (let name in canteens) {
+            count++;
             let info = canteens[name];
             let cls = info.status === "Open" ? "status-open" : "status-closed";
             html += `<div class="canteen-card" onclick="openCanteen('${name}')">
@@ -170,7 +201,7 @@
                 <div style="font-size:13px; color:#666; margin-top:5px;">🕒 Hours: ${info.schedule}</div>
             </div>`;
         }
-        document.getElementById('canteenListContainer').innerHTML = html;
+        document.getElementById('canteenListContainer').innerHTML = html || "<p style='color:grey;text-align:center;'>No canteens registered yet. Go to Canteen Admin tab to register!</p>";
     }
 
     function openCanteen(name) {
@@ -255,10 +286,18 @@
     }
 
     function renderAdminDashboard() {
-        let pass = document.getElementById('canteenPass').value;
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        if(pass !== "1234") { document.getElementById('adminContent').style.display = "none"; document.getElementById('adminError').style.display = "block"; return; }
-        document.getElementById('adminContent').style.display = "block"; document.getElementById('adminError').style.display = "none";
+        let pass = document.getElementById('canteenPass').value;
+
+        if(!selectedCanteen || !canteens[selectedCanteen]) return;
+
+        if(pass !== canteens[selectedCanteen].password) {
+            document.getElementById('adminContent').style.display = "none";
+            document.getElementById('adminError').style.display = "block";
+            return;
+        }
+        document.getElementById('adminContent').style.display = "block";
+        document.getElementById('adminError').style.display = "none";
 
         let info = canteens[selectedCanteen];
         document.getElementById('updateStatus').value = info.status;
@@ -281,7 +320,9 @@
 
     function updateCanteenMeta() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        canteens[selectedCanteen] = { status: document.getElementById('updateStatus').value, schedule: document.getElementById('updateSchedule').value, bank: document.getElementById('updateBank').value };
+        canteens[selectedCanteen].status = document.getElementById('updateStatus').value;
+        canteens[selectedCanteen].schedule = document.getElementById('updateSchedule').value;
+        canteens[selectedCanteen].bank = document.getElementById('updateBank').value;
         localStorage.setItem('uniCanteens', JSON.stringify(canteens));
     }
 
@@ -302,5 +343,3 @@
 
     window.onload = function() { renderCanteenList(); changeLanguage(); }
 </script>
-</body>
-</html>
