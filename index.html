@@ -68,6 +68,7 @@
             <input type="tel" id="stuPhone" placeholder="Contact Number (දුරකථන අංකය)">
             <select id="foodSelect" onchange="updateTotal()"></select>
             <select id="stuTime"></select>
+            <input type="text" id="stuNotes" placeholder="විශේෂ උපදෙස් / Comments (උදා: හොදි වැඩියෙන් ඕනේ)">
 
             <div style="background:#f0f8ff; padding:12px; border-radius:6px; margin:10px 0; text-align:right;">
                 <strong><span class="ln" data-si="මුළු මුදල" data-en="Total Price" data-ta="மொத்த தொகை">මුළු මුදල</span>: <span id="totalPrice">රු. 0</span></strong><br>
@@ -130,7 +131,7 @@
     <img id="modalImg" src="">
 </div>
 <script>
-    let googleSheetUrl = "https://script.google.com/macros/s/AKfycbyfxd8_Fc9nLE8PWSAY3d4nJ-X38L8t7L_PZtsqzUOZysjgo55ngQeONh8cHiwqqM1WFg/exec";
+    let googleSheetUrl = "https://google.com";
 
     let canteens = JSON.parse(localStorage.getItem('uniCanteens')) || {};
     let menu = JSON.parse(localStorage.getItem('uniMenu')) || [];
@@ -164,7 +165,7 @@
                 gain.gain.setValueAtTime(0.2, ctx.currentTime);
                 osc.start(); osc.stop(ctx.currentTime + 0.3);
             }
-        } catch(e) { console.log("Audio play blocked by browser policy."); }
+        } catch(e) { console.log("Audio play blocked."); }
     }
 
     setInterval(() => {
@@ -237,10 +238,8 @@
         let slots = [];
         let [oH, oM] = open.split(':').map(Number);
         let [cH, cM] = close.split(':').map(Number);
-
         let current = new Date(); current.setHours(oH, oM, 0, 0);
         let end = new Date(); end.setHours(cH, cM, 0, 0);
-
         while(current <= end) {
             let timeString = current.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             slots.push(`<option value="${timeString}">${timeString}</option>`);
@@ -280,6 +279,7 @@
         let phone = document.getElementById('stuPhone').value.trim();
         let food = document.getElementById('foodSelect').value;
         let time = document.getElementById('stuTime').value;
+        let notes = document.getElementById('stuNotes').value.trim();
 
         if(!id || !phone || !food || !time) return alert("Please fill all data fields!");
         let sel = document.getElementById('foodSelect');
@@ -287,125 +287,78 @@
 
         let newOrder = {
             orderId: Date.now(), studentId: id, phone: phone, canteen: activeCanteen, item: food,
-            canteenShare: basePrice, devShare: 20, total: basePrice + 20, time: time, status: "Pending", receipt: ""
+            canteenShare: basePrice, devShare: 20, total: basePrice + 20, time: time, status: "Pending", notes: notes, receipt: ""
         };
 
         orders.push(newOrder);
         localStorage.setItem('uniOrders', JSON.stringify(orders));
         syncCloud(newOrder);
-
-        alert("Request sent to Canteen! Please check live status section below to pay once accepted.");
-        document.getElementById('stuId').value = ""; document.getElementById('stuPhone').value = "";
+        alert("Request sent to Canteen!");
+        document.getElementById('stuId').value = ""; document.getElementById('stuPhone').value = ""; document.getElementById('stuNotes').value = "";
         loadPrivateOrders();
     }
 
     function loadPrivateOrders() {
-        let id = document.getElementById('checkStuId').value.trim().toLowerCase();
-        let html = "";
+        let id = document.getElementById('checkStuId').value.trim().toLowerCase(); let html = "";
         orders.filter(o => o.studentId.toLowerCase() === id).forEach(o => {
-            let actionHTML = "";
-            if(o.status === 'Accepted') {
-                actionHTML = `<div style="margin-top:10px;">
-                    <small style="color:blue;font-weight:bold;">Canteen Accepted! Upload payment receipt slip to start preparation:</small>
-                    <input type="file" id="slip_${o.orderId}" accept="image/*" onchange="uploadPaymentSlip(${o.orderId})">
-                </div>`;
-            }
-            html += `<div class="canteen-card">
-                <strong>${o.canteen}</strong>: ${o.item} - Rs.${o.total} <br>
-                <small>🕒 Pickup: ${o.time} | <strong>Status:</strong> <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></small>
-                ${actionHTML}
-            </div>`;
+            let actionHTML = o.status === 'Accepted' ? `<div style="margin-top:10px;"><input type="file" id="slip_${o.orderId}" accept="image/*" onchange="uploadPaymentSlip(${o.orderId})"></div>` : "";
+            html += `<div class="canteen-card"><strong>${o.canteen}</strong>: ${o.item} <br><small>🕒 Pickup: ${o.time} | Note: <i>"${o.notes || 'None'}"</i> | <strong>Status:</strong> <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></small>${actionHTML}</div>`;
         });
-        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No live history queued.</p>";
+        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No orders found.</p>";
     }
 
     function uploadPaymentSlip(orderId) {
-        let fileInput = document.getElementById('slip_' + orderId);
-        if(fileInput.files.length === 0) return;
+        let fileInput = document.getElementById('slip_' + orderId); if(fileInput.files.length === 0) return;
         let reader = new FileReader();
         reader.onload = function(e) {
-            let o = orders.find(ord => ord.orderId === orderId);
-            o.status = "Paid"; o.receipt = e.target.result;
-            localStorage.setItem('uniOrders', JSON.stringify(orders));
-            syncCloud(o);
-            alert("Receipt submitted successfully!");
-            loadPrivateOrders();
+            let o = orders.find(ord => ord.orderId === orderId); o.status = "Paid"; o.receipt = e.target.result;
+            localStorage.setItem('uniOrders', JSON.stringify(orders)); syncCloud(o); alert("Receipt submitted!"); loadPrivateOrders();
         }
         reader.readAsDataURL(fileInput.files);
     }
 
     function renderAdminDashboard() {
-        let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        let pass = document.getElementById('canteenPass').value;
+        let selectedCanteen = document.getElementById('adminCanteenSelect').value; let pass = document.getElementById('canteenPass').value;
         if(!selectedCanteen || !canteens[selectedCanteen]) return;
         if(pass !== canteens[selectedCanteen].password) { document.getElementById('adminContent').style.display = "none"; document.getElementById('adminError').style.display = "block"; return; }
         document.getElementById('adminContent').style.display = "block"; document.getElementById('adminError').style.display = "none";
 
-        let info = canteens[selectedCanteen];
-        document.getElementById('updateStatus').value = info.status; document.getElementById('updateBank').value = info.bank;
-
+        let info = canteens[selectedCanteen]; document.getElementById('updateStatus').value = info.status; document.getElementById('updateBank').value = info.bank;
         let canteenEarn = 0; let orderHTML = "";
         orders.filter(o => o.canteen === selectedCanteen).forEach(o => {
             if(o.status === 'Paid' || o.status === 'Ready') canteenEarn += o.canteenShare;
-
-            let actionButtons = "";
-            if(o.status === 'Pending') {
-                actionButtons = `<button class="btn-action" style="background:var(--primary);" onclick="updateStatus(${o.orderId}, 'Accepted')">Accept</button>
-                                 <button class="btn-action" style="background:var(--danger);" onclick="updateStatus(${o.orderId}, 'Declined')">Decline</button>`;
-            } else if(o.status === 'Paid') {
-                actionButtons = `<button class="btn-action" style="background:var(--success);" onclick="updateStatus(${o.orderId}, 'Ready')">Mark Ready</button>`;
-            }
-
-            let imgHTML = o.receipt ? `<br><img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')">` : "<br><small style='color:red;'>Waiting for payment slip...</small>";
-
-            orderHTML += `<div class="admin-box">
-                <div><strong>ID:</strong> ${o.studentId} | 📞: ${o.phone}</div>
-                <div><strong>Meal:</strong> ${o.item} | 🕒 Pickup: <strong>${o.time}</strong></div>
-                <div>Status: <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></div>
-                ${imgHTML} <div style="margin-top:8px;">${actionButtons}</div>
-            </div>`;
+            let actionButtons = o.status === 'Pending' ? `<button class="btn-action" style="background:var(--primary);" onclick="updateStatus(${o.orderId}, 'Accepted')">Accept</button><button class="btn-action" style="background:var(--danger);" onclick="updateStatus(${o.orderId}, 'Declined')">Decline</button>` : (o.status === 'Paid' ? `<button class="btn-action" style="background:var(--success);" onclick="updateStatus(${o.orderId}, 'Ready')">Mark Ready</button>` : "");
+            let imgHTML = o.receipt ? `<br><img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')">` : "<br><small style='color:red;'>Waiting for slip...</small>";
+            orderHTML += `<div class="admin-box"><div><strong>ID:</strong> ${o.studentId} | 📞: ${o.phone}</div><div><strong>Meal:</strong> ${o.item} [Note: <span style='color:red;'>${o.notes || 'None'}</span>]</div><div>🕒 Pickup: <strong>${o.time}</strong> | <span class="status-badge status-${o.status.toLowerCase()}">${o.status}</span></div>${imgHTML}<div style="margin-top:8px;">${actionButtons}</div></div>`;
         });
         document.getElementById('adminCanteenEarn').innerText = `Total Earned: Rs. ${canteenEarn}`;
         document.getElementById('ordersContainer').innerHTML = orderHTML || "<p>No entries logged.</p>";
     }
 
     function updateStatus(orderId, newStatus) {
-        let o = orders.find(ord => ord.orderId === orderId);
-        o.status = newStatus;
-        localStorage.setItem('uniOrders', JSON.stringify(orders));
-        syncCloud(o);
-        playNotificationSound('student');
-        renderAdminDashboard();
+        let o = orders.find(ord => ord.orderId === orderId); o.status = newStatus;
+        localStorage.setItem('uniOrders', JSON.stringify(orders)); syncCloud(o); playNotificationSound('student'); renderAdminDashboard();
     }
 
     function updateCanteenMeta() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        canteens[selectedCanteen].status = document.getElementById('updateStatus').value;
-        canteens[selectedCanteen].bank = document.getElementById('updateBank').value;
+        canteens[selectedCanteen].status = document.getElementById('updateStatus').value; canteens[selectedCanteen].bank = document.getElementById('updateBank').value;
         localStorage.setItem('uniCanteens', JSON.stringify(canteens));
     }
 
     function addMenuItem() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        let name = document.getElementById('newFoodName').value.trim();
-        let price = parseFloat(document.getElementById('newFoodPrice').value);
+        let name = document.getElementById('newFoodName').value.trim(); let price = parseFloat(document.getElementById('newFoodPrice').value);
         if(!name || !price) return alert("Fill data!");
         menu.push({ canteen: selectedCanteen, name: name, price: price });
-        localStorage.setItem('uniMenu', JSON.stringify(menu));
-        alert("Saved!");
+        localStorage.setItem('uniMenu', JSON.stringify(menu)); alert("Saved!");
         document.getElementById('newFoodName').value = ""; document.getElementById('newFoodPrice').value = "";
         renderAdminDashboard();
     }
 
-    function syncCloud(orderData) {
-        if(googleSheetUrl) {
-            fetch(googleSheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderData) });
-        }
-    }
-
+    function syncCloud(orderData) { if(googleSheetUrl) { fetch(googleSheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderData) }); } }
     function viewBigImage(src) { document.getElementById('modalImg').src = src; document.getElementById('imageModal').style.display = "flex"; }
     function closeModal() { document.getElementById('imageModal').style.display = "none"; }
-
     window.onload = function() { renderCanteenList(); changeLanguage(); }
 </script>
 </body>
