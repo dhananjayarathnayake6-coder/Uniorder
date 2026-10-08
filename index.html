@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Campus Canteen Pre-Order System</title>
+    <style>
+        :root { --primary: #007bff; --success: #28a745; --dark: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #f4f6f9; color: var(--dark); }
+        .nav { background: #fff; padding: 15px; display: flex; justify-content: space-around; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .nav button { background: none; border: none; font-size: 16px; font-weight: bold; cursor: pointer; padding: 5px 10px; }
+        .nav button.active { color: var(--primary); border-bottom: 3px solid var(--primary); }
+        .container { max-width: 500px; margin: 20px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .page { display: none; }
+        .page.active { display: block; }
+        .card { border: 1px solid #e1e8ed; padding: 15px; margin: 12px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
+        .price { font-weight: bold; color: var(--success); }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button.btn { width: 100%; background: var(--success); color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .admin-box { background: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .badge { background: #eaeaea; padding: 3px 8px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="nav">
+    <button id="tabStudent" class="active" onclick="switchTab('student')">🎓 සිසුන් (Student)</button>
+    <button id="tabAdmin" onclick="switchTab('admin')">🏪 කැන්ටිම & ඔයා (Admin)</button>
+</div>
+
+<div class="container">
+    <!-- STUDENT PAGE -->
+    <div id="pageStudent" class="page active">
+        <h2>🍽️ අද දවසේ මෙනු එක</h2>
+        <p style="font-size: 13px; color: #666;">කෑම අපතේ යාම වැළැක්වීමට උදේ 8:30 ට පෙර ඇණවුම් කරන්න.</p>
+        <div id="menuContainer"></div>
+
+        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+
+        <h3>🛒 ඇණවුම් කරන්න</h3>
+        <input type="text" id="stuName" placeholder="ඔයාගේ නම">
+        <select id="foodSelect" onchange="updateTotal()"></select>
+
+        <div style="background:#f0f8ff; padding:10px; border-radius:6px; margin:10px 0; text-align:right;">
+            <strong>මුළු මුදල: <span id="totalPrice">රු. 0</span></strong> <br>
+            <span style="font-size:11px; color:#555;">(ඇතුළත් ගාස්තු: රු. 20 ඇතුළත් කර ඇත)</span>
+        </div>
+
+        <div style="background:#fff3cd; padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px;">
+            <strong>💰 මුදල් ගෙවීම:</strong> කරුණාකර <strong>0123456789 (BOC)</strong> ගිණුමට මුදල් තැන්පත් කර, Slip/Receipt එක පහතින් Upload කරන්න.
+        </div>
+        <input type="file" id="receiptFile" accept="image/*">
+        <button class="btn" onclick="submitOrder()">Place Order & Pay</button>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div id="pageAdmin" class="page">
+        <div class="admin-box">
+            <h3>🏪 කැන්ටිම් මෙනු අප්ඩේට්</h3>
+            <input type="text" id="newFoodName" placeholder="කෑමේ නම (උදා: චිකන් රයිස්)">
+            <input type="number" id="newFoodPrice" placeholder="මිල (රුපියල්)">
+            <button class="btn" style="background:var(--primary);" onclick="addMenuItem()">කෑම වර්ගය එකතු කරන්න</button>
+        </div>
+
+        <h3>📊 ඔයාගේ ලාභය සහ ඕඩර්ස් (Dashboard)</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <div style="background:#d4edda; padding:15px; border-radius:8px; text-align:center;">
+                <span style="font-size:13px;">🏪 කැන්ටිම් උපයනය</span>
+                <h2 id="dashCanteen" style="margin:5px 0; color:#155724;">රු. 0</h2>
+            </div>
+            <div style="background:#cce5ff; padding:15px; border-radius:8px; text-align:center;">
+                <span style="font-size:13px;">💰 ඔයාගේ කොමිස් (රු.20×)</span>
+                <h2 id="dashDev" style="margin:5px 0; color:#004085;">රු. 0</h2>
+            </div>
+        </div>
+
+        <h3>📦 ලැබුණු ඇණවුම් ලැයිස්තුව</h3>
+        <div id="ordersContainer"></div>
+    </div>
+</div>
+
+<script>
+    // ඩේටා තාවකාලිකව සේව් කරගන්නා තැන (Local Storage භාවිතයෙන් Phone/Computer එකේ මැකෙන්නේ නැතුව තියෙනවා)
+    let menu = JSON.parse(localStorage.getItem('canteenMenu')) || [
+        {name: "චිකන් බත් සහ එළවළු", price: 330},
+        {name: "එළවළු බත්", price: 230},
+        {name: "ඉඳිආප්ප ලෑල්ල", price: 180}
+    ];
+    let orders = JSON.parse(localStorage.getItem('canteenOrders')) || [];
+
+    function switchTab(tab) {
+        document.getElementById('pageStudent').classList.remove('active');
+        document.getElementById('pageAdmin').classList.remove('active');
+        document.getElementById('tabStudent').classList.remove('active');
+        document.getElementById('tabAdmin').classList.remove('active');
+
+        if(tab === 'student') {
+            document.getElementById('pageStudent').classList.add('active');
+            document.getElementById('tabStudent').classList.add('active');
+        } else {
+            document.getElementById('pageAdmin').classList.add('active');
+            document.getElementById('tabAdmin').classList.add('active');
+        }
+        renderData();
+    }
+
+    function renderData() {
+        // Render Student Menu
+        let menuHTML = "";
+        let selectHTML = "<option value=''>-- තෝරන්න --</option>";
+        menu.forEach(item => {
+            let finalPrice = item.price + 20; // රු. 20 කෝමිස් එක එකතු කර පෙන්වීම
+            menuHTML += `<div class="card"><span>${item.name}</span><span class="price">රු. ${finalPrice}</span></div>`;
+            selectHTML += `<option value="${item.name}" data-price="${item.price}">${item.name} (රු. ${finalPrice})</option>`;
+        });
+        document.getElementById('menuContainer').innerHTML = menuHTML || "<p>අද දවසේ මෙනු එක තවම අප්ඩේට් කර නැත.</p>";
+        document.getElementById('foodSelect').innerHTML = selectHTML;
+
+        // Render Admin Dashboard
+        let totalCanteen = 0;
+        let totalDev = 0;
+        let ordersHTML = "";
+
+        orders.forEach(ord => {
+            totalCanteen += ord.canteenShare;
+            totalDev += ord.devShare;
+            ordersHTML += `<div class="card" style="flex-direction:column; align-items:flex-start;">
+                <div><strong>නම:</strong> ${ord.student}</div>
+                <div><strong>කෑම:</strong> ${ord.item}</div>
+                <div><strong>ගෙවූ මුදල:</strong> රු. ${ord.total} <span class="badge">කැන්ටිමට: රු.${ord.canteenShare}</span> <span class="badge" style="background:#cce5ff;">ඔයාට: රု.20</span></div>
+                <div style="font-size:12px; color:blue; margin-top:5px;">📄 Receipt uploaded ✅</div>
+            </div>`;
+        });
+
+        document.getElementById('dashCanteen').innerText = "රු. " + totalCanteen;
+        document.getElementById('dashDev').innerText = "රු. " + totalDev;
+        document.getElementById('ordersContainer').innerHTML = ordersHTML || "<p>තවම ඇණවුම් ලැබී නැත.</p>";
+    }
+
+    function addMenuItem() {
+        let name = document.getElementById('newFoodName').value;
+        let price = parseFloat(document.getElementById('newFoodPrice').value);
+        if(!name || !price) return alert("කරුණාකර සියලු විස්තර පුරවන්න!");
+
+        menu.push({name: name, price: price});
+        localStorage.setItem('canteenMenu', JSON.stringify(menu));
+        alert("කෑම වර්ගය සාර්ථකව එකතු කළා!");
+        document.getElementById('newFoodName').value = "";
+        document.getElementById('newFoodPrice').value = "";
+        renderData();
+    }
+
+    function updateTotal() {
+        let sel = document.getElementById('foodSelect');
+        if(!sel.value) {
+            document.getElementById('totalPrice').innerText = "රු. 0";
+            return;
+        }
+        let basePrice = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-price'));
+        document.getElementById('totalPrice').innerText = "රු. " + (basePrice + 20);
+    }
+
+    function submitOrder() {
+        let name = document.getElementById('stuName').value;
+        let food = document.getElementById('foodSelect').value;
+        let file = document.getElementById('receiptFile').value;
+
+        if(!name || !food || !file) return alert("කරුණාකර ඔයාගේ නම, කෑම වර්ගය සහ ගෙවීම් රිසිට්පත ඇතුළත් කරන්න!");
+
+        let sel = document.getElementById('foodSelect');
+        let basePrice = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-price'));
+
+        orders.push({
+            student: name,
+            item: food,
+            canteenShare: basePrice,
+            devShare: 20,
+            total: basePrice + 20
+        });
+
+        localStorage.setItem('canteenOrders', JSON.stringify(orders));
+        alert("ඔයාගේ ඇණවුම සාර්ථකව ලැබුණා! ස්තූතියි.");
+
+        document.getElementById('stuName').value = "";
+        document.getElementById('foodSelect').value = "";
+        document.getElementById('receiptFile').value = "";
+        document.getElementById('totalPrice').innerText = "රු. 0";
+        renderData();
+    }
+
+    // මුලින්ම ඩේටා ලෝඩ් කිරීම
+    renderData();
+</script>
+
+</body>
+</html>
