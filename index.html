@@ -42,41 +42,38 @@
 <div class="nav">
     <button id="tabStudent" class="active" onclick="switchTab('student')">🎓 <span class="ln" data-si="සිසුන්" data-en="Students" data-ta="மாணவர்கள்">සිසුන්</span></button>
     <button id="tabAdmin" onclick="switchTab('admin')">🏪 <span class="ln" data-si="කැන්ටිම" data-en="Canteen Admin" data-ta="உணவகம்">කැන්ටිම</span></button>
-    <button id="tabDev" onclick="switchTab('dev')">👑 <span class="ln" data-si="මගේ වාර්තා" data-en="Super Admin" data-ta="மேலாளர்">මගේ වාර්තා</span></button>
 </div>
 
 <div class="container">
-    
     <div id="pageStudent" class="page active">
         <h2 class="ln" data-si="🏪 කැන්ටිම් ජාලය" data-en="🏪 Canteen Network" data-ta="🏪 உணவக நெட்வொர்க்">🏪 කැන්ටිම් ජාලය</h2>
         <div id="canteenListContainer"></div>
     </div>
-
     <div id="pageCanteenDetail" class="page">
         <button onclick="switchTab('student')" style="background:none; border:none; color:var(--primary); font-weight:bold; cursor:pointer; padding:0; margin-bottom:15px;">← <span class="ln" data-si="ආපසු" data-en="Back to Canteens" data-ta="பின்னால்">ආපසු</span></button>
         <h2 id="detCanteenName"></h2>
         <div id="detCanteenMeta" style="margin-bottom:15px;"></div>
-        
+
         <h3>🍽️ <span class="ln" data-si="අද දවසේ මෙනු එක" data-en="Today's Menu" data-ta="இன்றைய மெனு">අද දවසේ මෙනු එක</span></h3>
         <div id="detMenuContainer"></div>
-        
+
         <div id="orderFormSection" style="margin-top:25px; border-top:2px solid #eee; padding-top:15px;">
-            <h3>🛒 <span class="ln" data-si="ඇණවුම් পෝරමය" data-en="Place Your Order" data-ta="ஆர்டர் படிவம்">ඇණවුම් පෝරමය</span></h3>
+            <h3>🛒 <span class="ln" data-si="ඇණවුම් පෝරමය" data-en="Place Your Order" data-ta="ஆர்டர் படிவம்">ඇණවුම් පෝරමය</span></h3>
             <input type="text" id="stuId" placeholder="Student ID (ශිෂ්‍ය අංකය)">
             <input type="tel" id="stuPhone" placeholder="Contact Number (දුරකථන අංකය)">
             <select id="foodSelect" onchange="updateTotal()"></select>
-            
+
             <div style="background:#f0f8ff; padding:12px; border-radius:6px; margin:10px 0; text-align:right;">
                 <strong><span class="ln" data-si="මුළු මුදල" data-en="Total Price" data-ta="மொத்த தொகை">මුළු මුදල</span>: <span id="totalPrice">රු. 0</span></strong><br>
                 <span style="font-size:11px; color:#666;">(Service Charge Rs.20 Included)</span>
             </div>
-            
+
             <div id="paymentInstructions" style="background:#fff3cd; padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px;"></div>
             <p style="margin:5px 0; font-size:13px; font-weight:bold;"><span class="ln" data-si="ගෙවීම් රිසිට්පත (Slip) උඩුගත කරන්න:" data-en="Upload Payment Receipt (Slip):" data-ta="ரசீதை பதிவேற்றவும்:">ගෙවීම් රිසිට්පත (Slip) උඩුගත කරන්න:</span></p>
             <input type="file" id="receiptFile" accept="image/*">
             <button class="btn" onclick="submitOrder()"><span class="ln" data-si="ඇණවුම තහවුරු කරන්න" data-en="Confirm & Pay" data-ta="ஆர்டரை உறுதிசெய்">ඇණවුම තහවුරු කරන්න</span></button>
         </div>
-        
+
         <h3 style="margin-top:35px;">📦 <span class="ln" data-si="මගේ ඇණවුම්" data-en="My Private Orders" data-ta="எனது ஆர்டர்கள்">මගේ ඇණවුම්</span></h3>
         <input type="text" id="checkStuId" placeholder="Enter Student ID to check" oninput="loadPrivateOrders()">
         <div id="privateOrdersContainer"></div>
@@ -103,7 +100,7 @@
 
             <div class="admin-box">
                 <h4>➕ <span class="ln" data-si="කෑම වර්ග අප්ඩේට් කරන්න" data-en="Add Menu Item" data-ta="உணவை சேர்க்கவும்">කෑම වර්ග අප්ඩේට් කරන්න</span></h4>
-                <input type="text" id="newFoodName" placeholder="කෑමේ นම">
+                <input type="text" id="newFoodName" placeholder="කෑමේ නම">
                 <input type="number" id="newFoodPrice" placeholder="මුදලාලිගේ මිල (රු.)">
                 <button class="btn" style="background:var(--primary);" onclick="addMenuItem()">Save Item</button>
             </div>
@@ -116,23 +113,14 @@
         </div>
         <div id="adminError" style="color:var(--danger); font-weight:bold; text-align:center; margin-top:10px;">Access Restricted. Enter correct password.</div>
     </div>
-
-    <div id="pageDev" class="page">
-        <h2>👑 <span class="ln" data-si="මුළු පද්ධති වාර්තාව" data-en="Developer Super Dashboard" data-ta="முதன்மை டாஷ்போர்டு">මුළු පද්ධති වාර්තාව</span></h2>
-        <div style="background:#cce5ff; padding:20px; border-radius:10px; text-align:center; margin-bottom:20px;">
-            <span style="font-size:14px; font-weight:bold;">💰 ඔයාගේ මුළු එකතුව (Total Profit)</span>
-            <h1 id="devTotalProfit" style="margin:10px 0; color:#004085;">රු. 0</h1>
-            <span style="font-size:12px;">(සෑම ඕඩර් එකකින්ම ලැබුණු රු. 20 එකතුව)</span>
-        </div>
-        <h3>📈 කැන්ටිම් අනුව ඇණවුම් ප්‍රමාණය</h3>
-        <div id="devSummaryContainer"></div>
-    </div>
 </div>
 
 <div id="imageModal" class="modal" onclick="closeModal()">
     <img id="modalImg" src="">
 </div>
 <script>
+    let googleSheetUrl = "https://google.com";
+
     let defaultCanteens = {
         "Main Canteen": { status: "Open", schedule: "7:00 AM - 6:00 PM", bank: "BOC - 0123456789 (Main Canteen)" },
         "Science Canteen": { status: "Open", schedule: "7:30 AM - 4:30 PM", bank: "People's Bank - 9876543210 (Science)" },
@@ -153,9 +141,7 @@
 
     function changeLanguage() {
         currentLang = document.getElementById('langSelector').value;
-        document.querySelectorAll('.ln').forEach(el => {
-            el.innerText = el.getAttribute('data-' + currentLang);
-        });
+        document.querySelectorAll('.ln').forEach(el => { el.innerText = el.getAttribute('data-' + currentLang); });
         renderCanteenList();
         if(activeCanteen) openCanteen(activeCanteen);
     }
@@ -163,8 +149,6 @@
     function switchTab(tab) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-        activeCanteen = "";
-
         if(tab === 'student') {
             document.getElementById('pageStudent').classList.add('active');
             document.getElementById('tabStudent').classList.add('active');
@@ -173,10 +157,6 @@
             document.getElementById('pageAdmin').classList.add('active');
             document.getElementById('tabAdmin').classList.add('active');
             renderAdminDashboard();
-        } else if(tab === 'dev') {
-            document.getElementById('pageDev').classList.add('active');
-            document.getElementById('tabDev').classList.add('active');
-            renderDevDashboard();
         }
     }
 
@@ -186,10 +166,7 @@
             let info = canteens[name];
             let cls = info.status === "Open" ? "status-open" : "status-closed";
             html += `<div class="canteen-card" onclick="openCanteen('${name}')">
-                <div class="flex-box">
-                    <strong>🏪 ${name}</strong>
-                    <span class="status-badge ${cls}">${info.status}</span>
-                </div>
+                <div class="flex-box"><strong>🏪 ${name}</strong><span class="status-badge ${cls}">${info.status}</span></div>
                 <div style="font-size:13px; color:#666; margin-top:5px;">🕒 Hours: ${info.schedule}</div>
             </div>`;
         }
@@ -198,9 +175,8 @@
 
     function openCanteen(name) {
         activeCanteen = name;
-        document.getElementById('pageStudent').classList.remove('active');
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById('pageCanteenDetail').classList.add('active');
-        
         document.getElementById('detCanteenName').innerText = "🏪 " + name;
         let info = canteens[name];
         document.getElementById('detCanteenMeta').innerHTML = `🕒 <strong>Time:</strong> ${info.schedule} | <strong>Status:</strong> ${info.status}`;
@@ -209,13 +185,25 @@
         let menuHTML = "";
         let selectHTML = "<option value=''>-- Select Food --</option>";
         let filteredMenu = menu.filter(m => m.canteen === name);
-
         filteredMenu.forEach(item => {
             menuHTML += `<div class="food-item"><span>🍚 ${item.name}</span><span class="price">Rs. ${item.price + 20}</span></div>`;
             selectHTML += `<option value="${item.name}" data-price="${item.price}">${item.name} (Rs. ${item.price + 20})</option>`;
         });
-
         document.getElementById('detMenuContainer').innerHTML = menuHTML || "<p>No meals updated for today.</p>";
+
+        if(!document.getElementById('stuTime')) {
+            let timeSelectHTML = `<select id="stuTime">
+                <option value="">-- කෑම ගන්න එන වේලාව (Pickup Time) --</option>
+                <option value="11:30 AM">11:30 AM</option>
+                <option value="12:00 PM">12:00 PM</option>
+                <option value="12:30 PM">12:30 PM</option>
+                <option value="01:00 PM">01:00 PM</option>
+                <option value="01:30 PM">01:30 PM</option>
+                <option value="02:00 PM">02:00 PM</option>
+            </select>`;
+            document.getElementById('foodSelect').insertAdjacentHTML('afterend', timeSelectHTML);
+        }
+
         document.getElementById('foodSelect').innerHTML = selectHTML;
         document.getElementById('orderFormSection').style.display = info.status === "Open" ? "block" : "none";
     }
@@ -230,87 +218,70 @@
         let id = document.getElementById('stuId').value.trim();
         let phone = document.getElementById('stuPhone').value.trim();
         let food = document.getElementById('foodSelect').value;
+        let time = document.getElementById('stuTime').value;
         let fileInput = document.getElementById('receiptFile');
 
-        if(!id || !phone || !food || fileInput.files.length === 0) {
-            return alert("Please fill Student ID, Phone, and upload the Payment Receipt Slip!");
+        if(!id || !phone || !food || !time || fileInput.files.length === 0) {
+            return alert("Please fill Student ID, Phone, Pickup Time, and upload Receipt!");
         }
-
         let sel = document.getElementById('foodSelect');
         let basePrice = parseFloat(sel.options[sel.selectedIndex].getAttribute('data-price'));
 
         let reader = new FileReader();
         reader.onload = function(e) {
-            orders.push({
-                studentId: id,
-                phone: phone,
-                canteen: activeCanteen,
-                item: food,
-                canteenShare: basePrice,
-                devShare: 20,
-                total: basePrice + 20,
-                receipt: e.target.result
-            });
+            let orderData = { studentId: id, phone: phone, canteen: activeCanteen, item: food, canteenShare: basePrice, devShare: 20, total: basePrice + 20, time: time, receipt: e.target.result };
+            orders.push(orderData);
             localStorage.setItem('uniOrders', JSON.stringify(orders));
+
+            if(googleSheetUrl) {
+                fetch(googleSheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderData) })
+                .then(() => console.log("Synced with Google Sheets!"))
+                .catch(err => console.error("Sync error:", err));
+            }
+
             alert("Order placed successfully!");
-            document.getElementById('stuId').value = "";
-            document.getElementById('stuPhone').value = "";
-            document.getElementById('receiptFile').value = "";
+            document.getElementById('stuId').value = ""; document.getElementById('stuPhone').value = ""; document.getElementById('receiptFile').value = "";
             openCanteen(activeCanteen);
         }
         reader.readAsDataURL(fileInput.files);
     }
 
     function loadPrivateOrders() {
-        let id = document.getElementById('checkStuId').value.trim().toLowerCase();
-        let html = "";
+        let id = document.getElementById('checkStuId').value.trim().toLowerCase(); let html = "";
         orders.filter(o => o.studentId.toLowerCase() === id).forEach(o => {
-            html += `<div class="canteen-card"><strong>${o.canteen}</strong>: ${o.item} - Rs.${o.total} <span style="color:green;">✓ Verified</span></div>`;
+            html += `<div class="canteen-card"><strong>${o.canteen}</strong>: ${o.item} - Rs.${o.total} <br><small>🕒 Pickup Time: ${o.time}</small> <span style="color:green;">✓ Verified</span></div>`;
         });
-        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No orders found for this ID.</p>";
+        document.getElementById('privateOrdersContainer').innerHTML = html || "<p style='color:grey;'>No orders found.</p>";
     }
 
     function renderAdminDashboard() {
         let pass = document.getElementById('canteenPass').value;
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-
-        if(pass !== "1234") {
-            document.getElementById('adminContent').style.display = "none";
-            document.getElementById('adminError').style.display = "block";
-            return;
-        }
-
-        document.getElementById('adminContent').style.display = "block";
-        document.getElementById('adminError').style.display = "none";
+        if(pass !== "1234") { document.getElementById('adminContent').style.display = "none"; document.getElementById('adminError').style.display = "block"; return; }
+        document.getElementById('adminContent').style.display = "block"; document.getElementById('adminError').style.display = "none";
 
         let info = canteens[selectedCanteen];
         document.getElementById('updateStatus').value = info.status;
         document.getElementById('updateSchedule').value = info.schedule;
         document.getElementById('updateBank').value = info.bank;
 
-        let canteenEarn = 0;
-        let orderHTML = "";
+        let canteenEarn = 0; let orderHTML = "";
         orders.filter(o => o.canteen === selectedCanteen).forEach(o => {
             canteenEarn += o.canteenShare;
             orderHTML += `<div class="admin-box">
                 <div><strong>ID:</strong> ${o.studentId} | 📞 <strong>Phone:</strong> ${o.phone}</div>
-                <div><strong>Meal:</strong> ${o.item} | 💰 <strong>Payout:</strong> Rs. ${o.canteenShare}</div>
-                <div><strong>Receipt Slip:</strong></div>
-                <img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')" title="Click to enlarge">
+                <div><strong>Meal:</strong> ${o.item} | 🕒 <strong>Pickup:</strong> <span style="color:var(--primary); font-weight:bold;">${o.time}</span></div>
+                <div><strong>Payout:</strong> Rs. ${o.canteenShare}</div>
+                <img src="${o.receipt}" class="receipt-preview" onclick="viewBigImage('${o.receipt}')">
             </div>`;
         });
-
         document.getElementById('adminCanteenEarn').innerText = `Your Total Income: Rs. ${canteenEarn}`;
         document.getElementById('ordersContainer').innerHTML = orderHTML || "<p>No orders queued.</p>";
     }
 
     function updateCanteenMeta() {
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
-        canteens[selectedCanteen] = {
-            status: document.getElementById('updateStatus').value,
-            schedule: document.getElementById('updateSchedule').value,
-            bank: document.getElementById('updateBank').value
-        };
+        canteens[selectedCanteen] = { status: document.getElementById('updateStatus').value, schedule: document.getElementById('updateSchedule').value, bank: document.getElementById('updateBank').value };
         localStorage.setItem('uniCanteens', JSON.stringify(canteens));
     }
 
@@ -318,41 +289,18 @@
         let selectedCanteen = document.getElementById('adminCanteenSelect').value;
         let name = document.getElementById('newFoodName').value.trim();
         let price = parseFloat(document.getElementById('newFoodPrice').value);
-
         if(!name || !price) return alert("Enter valid credentials!");
         menu.push({ canteen: selectedCanteen, name: name, price: price });
         localStorage.setItem('uniMenu', JSON.stringify(menu));
         alert("Item saved!");
-        document.getElementById('newFoodName').value = "";
-        document.getElementById('newFoodPrice').value = "";
+        document.getElementById('newFoodName').value = ""; document.getElementById('newFoodPrice').value = "";
         renderAdminDashboard();
     }
 
-    function renderDevDashboard() {
-        let totalProfit = orders.length * 20;
-        document.getElementById('devTotalProfit').innerText = "රු. " + totalProfit;
+    function viewBigImage(src) { document.getElementById('modalImg').src = src; document.getElementById('imageModal').style.display = "flex"; }
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; }
 
-        let summary = {};
-        for (let name in canteens) { summary[name] = 0; }
-        orders.forEach(o => { if(summary[o.canteen] !== undefined) summary[o.canteen]++; });
-
-        let html = "";
-        for (let name in summary) {
-            html += `<div class="canteen-card flex-box"><span>🏪 ${name}</span><strong>${summary[name]} Orders</strong></div>`;
-        }
-        document.getElementById('devSummaryContainer').innerHTML = html;
-    }
-
-    function viewBigImage(src) {
-        document.getElementById('modalImg').src = src;
-        document.getElementById('imageModal').style.display = "flex";
-    }
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-    }
-
-    renderCanteenList();
-    changeLanguage();
+    window.onload = function() { renderCanteenList(); changeLanguage(); }
 </script>
 </body>
 </html>
